@@ -187,7 +187,7 @@ const viewAllEmployees = () => {
     const addAnEmployee = () => {
       inquirer.prompt([{
         type: 'input',
-        name: 'firstName',
+        name: 'first_name',
         message: 'Enter employee\'s first name',
         validate: addFirstName => {
           if (addFirstName) {
@@ -200,7 +200,7 @@ const viewAllEmployees = () => {
       },
       {
         type: 'input',
-        name: 'lastName',
+        name: 'last_name',
         message: 'Enter employee\'s last name',
         validate: addLastName => {
           if (addLastName) {
@@ -213,7 +213,7 @@ const viewAllEmployees = () => {
         }
     ])
     .then(answer => {
-      const addEmployee = [answer.firstName, answer.lastName];
+      const addEmployee = [answer.first_name, answer.last_name];
       const roleSql = `SELECT role.id, role.title FROM role`;
       connection.query(roleSql, (error, data) => {
         if (error) throw error;
@@ -226,8 +226,9 @@ const viewAllEmployees = () => {
             choices: roleList
           }
         ])
-        .then(chosenRole => {
-          const aRole = chosenRole.role;
+        .then(answer => {
+          const aRole = answer.roleList;
+          //console.log('chosen role is ' + answer.roleList);
           addEmployee.push(aRole);
           const managerSql = `SELECT * FROM employee`;
           connection.query(managerSql, (error, data) => {
@@ -242,8 +243,9 @@ const viewAllEmployees = () => {
               }
             ])
             .then(chooseManager => {
-              const manager = chooseManager.manager;
+              const manager = chooseManager.managerList;
               addEmployee.push(manager);
+              console.log(manager);
               const sql = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)`;
               connection.query(sql, addEmployee, (error) => {
                 if (error) throw error;
@@ -262,7 +264,7 @@ const viewAllEmployees = () => {
       connection.query(sql, (error, response) => {
         if (error) throw error;
         let employeeArray = [];
-        response.forEach((employee) => {employeeArray.push(`${employee.first_name} ${employee.last_name}`)});
+        response.forEach((employee) => {employeeArray.push(`First Name: ${employee.first_name} Last Name: ${employee.last_name} Employee ID: ${employee.id}`)});
         let sql = `SELECT role.id, role.title FROM role`;
         connection.query(sql, (error, response) => {
           if (error) throw error;
@@ -285,23 +287,32 @@ const viewAllEmployees = () => {
           ])
           .then((answer) => {
             let newId, employeeId;
+            
             response.forEach((role) => {
               if (answer.chooseRole === role.title)
               {newId = role.id;
               }
+              
             });
-            response.forEach((employee) => {
-              if (answer.chooseEmployee === `${employee.first_name} ${employee.last_name}`) 
-            {
-              employeeId = employee.id;
-            }
-          });
+            
+            //console.log (answer.chooseEmployee);
+
+            employeeId = answer.chooseEmployee;
+
+            employeeId = employeeId.split("ID:");
+            
+            employeeId = employeeId[1];
+
+            employeeId = parseInt(employeeId);
+
+           // console.log (employeeId)
 
           let sqls = `UPDATE employee SET employee.role_id = ? WHERE employee.id =?`;
           connection.query(sqls,
             [newId, employeeId],
             (error) => {
               if (error) throw error;
+             // console.log(newId, employeeId)
               console.log(`=================================`);
               console.log(`You just updated employee\'s role`);
               console.log(`=================================`);
